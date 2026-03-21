@@ -1,0 +1,12 @@
+{
+  "name": "music-buddy",
+  "version": "1.0.0",
+  "description": "Malý widget so smajlíkom tancujúcim na hudbu",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  }
+}

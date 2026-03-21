@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  html, body {
+    width: 220px; height: 340px;
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* ── Outer shell ── */
+  .player {
+    width: 220px; height: 340px;
+    background: linear-gradient(160deg, #1c1c1e 0%, #111113 100%);
+    border-radius: 26px;
+    border: 1.5px solid rgba(255,255,255,0.07);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 14px 16px;
+    position: relative;
+    -webkit-app-region: drag;
+  }
+
+  /* ── Three dots ── */
+  .dots {
+    display: flex; gap: 5px;
+    align-self: flex-start;
+    margin-bottom: 10px;
+  }
+  .dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #3aff7a;
+    opacity: 0.85;
+  }
+  .dots span:nth-child(2) { opacity: 0.4; background: #fff; }
+  .dots span:nth-child(3) { opacity: 0.25; background: #fff; }
+
+  /* ── Album art / waveform area ── */
+  .art-box {
+    width: 192px; height: 148px;
+    background: #0a0a0c;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Drop zone inside art-box */
+  .drop-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+  }
+  .drop-hint p {
+    font-size: 9.5px;
+    color: rgba(255,255,255,0.28);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .drop-hint .icon { font-size: 24px; }
+  .drop-hint input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-hint.hidden { display: none; }
+  .art-box.dragover { outline: 2px dashed rgba(58,255,122,0.5); }
+
+  /* ── Waveform bars ── */
+  .waveform {
+    display: flex;
+    align-items: flex-end;
+    gap: 2.5px;
+    height: 64px;
+    width: 180px;
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .waveform.visible { opacity: 1; }
+
+  .wv-bar {
+    flex: 1;
+    border-radius: 2px 2px 1px 1px;
+    background: #1a1a1e;
+    min-height: 3px;
+    transition: height 0.05s ease, background 0.3s;
+  }
+  .wv-bar.active {
+    background: linear-gradient(180deg, #3aff7a 0%, #1db954 55%, #0a7a30 100%);
+    box-shadow: 0 0 5px rgba(58,255,122,0.3);
+  }
+
+  /* ── Track name ── */
+  .track-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    max-width: 192px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    margin-top: 12px;
+    letter-spacing: 0.01em;
+  }
+  .track-sub {
+    font-size: 9px;
+    color: rgba(255,255,255,0.28);
+    margin-top: 2px;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    width: 192px;
+    margin-top: 10px;
+    position: relative;
+    -webkit-app-region: no-drag;
+  }
+  .progress-bg {
+    width: 100%; height: 2px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: visible;
+    position: relative;
+    cursor: pointer;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3aff7a, #1db954);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s linear;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -4px; top: -3px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #3aff7a;
+    box-shadow: 0 0 6px rgba(58,255,122,0.7);
+  }
+  .time-row {
+    display: flex; justify-content: space-between;
+    margin-top: 5px;
+    font-size: 8.5px;
+    color: rgba(255,255,255,0.25);
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 12px;
+    -webkit-app-region: no-drag;
+  }
+
+  .ctrl-btn {
+    cursor: pointer;
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    transition: color 0.15s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ctrl-btn:hover { color: #fff; transform: scale(1.15); }
+
+  .play-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: #3aff7a;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(58,255,122,0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+    -webkit-app-region: no-drag;
+  }
+  .play-btn:hover { transform: scale(1.08); box-shadow: 0 0 20px rgba(58,255,122,0.6); }
+  .play-btn svg { fill: #000; width: 14px; height: 14px; margin-left: 2px; }
+  .play-btn.paused svg { margin-left: 0; }
+
+  /* eject/change */
+  .eject-btn {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.2);
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+    transition: color 0.2s;
+  }
+  .eject-btn:hover { color: rgba(255,255,255,0.6); }
+
+  /* close */
+  .close-btn {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    -webkit-app-region: no-drag;
+    font-size: 10px;
+    color: transparent;
+    transition: background 0.2s, color 0.2s;
+  }
+  .player:hover .close-btn {
+    background: rgba(255,55,55,0.7);
+    color: #fff;
+  }
+
+  /* err */
+  .err {
+    font-size: 9px;
+    color: #ff5555;
+    text-align: center;
+    margin-top: 4px;
+    min-height: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="player" id="player">
+
+  <!-- Three dots -->
+  <div class="dots"><span></span><span></span><span></span></div>
+
+  <!-- Album / waveform box -->
+  <div class="art-box" id="artBox">
+    <div class="drop-hint" id="dropHint">
+      <span class="icon">🎵</span>
+      <p>Presuň MP3<br>alebo klikni</p>
+      <input type="file" id="fileInput" accept="audio/*">
+    </div>
+    <div class="waveform" id="waveform">
+      <!-- 28 bars -->
+    </div>
+  </div>
+
+  <!-- Track info -->
+  <div class="track-name" id="trackName">—</div>
+  <div class="track-sub" id="trackSub">music buddy</div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-bg" id="progressBg">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="time-row">
+      <span id="timeCur">0:00</span>
+      <span id="timeTot">0:00</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-btn" id="prevBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+    </div>
+    <div class="play-btn paused" id="playBtn">
+      <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+    <div class="ctrl-btn" id="nextBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4V8z M16 6h2v12h-2z"/></svg>
+    </div>
+  </div>
+
+  <div class="err" id="errEl"></div>
+  <div class="eject-btn" id="ejectBtn" title="Zmeniť skladbu">⏏</div>
+  <div class="close-btn" id="closeBtn">✕</div>
+</div>
+
+<script>
+(() => {
+  // ── DOM refs ──
+  const artBox      = document.getElementById('artBox');
+  const dropHint    = document.getElementById('dropHint');
+  const fileInput   = document.getElementById('fileInput');
+  const waveformEl  = document.getElementById('waveform');
+  const trackName   = document.getElementById('trackName');
+  const trackSub    = document.getElementById('trackSub');
+  const progressFill= document.getElementById('progressFill');
+  const progressBg  = document.getElementById('progressBg');
+  const timeCur     = document.getElementById('timeCur');
+  const timeTot     = document.getElementById('timeTot');
+  const playBtn     = document.getElementById('playBtn');
+  const playIcon    = document.getElementById('playIcon');
+  const prevBtn     = document.getElementById('prevBtn');
+  const nextBtn     = document.getElementById('nextBtn');
+  const ejectBtn    = document.getElementById('ejectBtn');
+  const closeBtn    = document.getElementById('closeBtn');
+  const errEl       = document.getElementById('errEl');
+
+  closeBtn.addEventListener('click', () => window.close());
+
+  // ── Scroll wheel = volume ──
+  let volume = parseFloat(localStorage.getItem('mb_volume') ?? '0.8');
+  document.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    volume = Math.min(1, Math.max(0, volume + (e.deltaY < 0 ? 0.05 : -0.05)));
+    if (audio) audio.volume = volume;
+    try { localStorage.setItem('mb_volume', volume.toString()); } catch(e) {}
+  }, { passive: false });
+
+  // ── Build 28 waveform bars ──
+  const BAR_COUNT = 28;
+  const bars = [];
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const b = document.createElement('div');
+    b.className = 'wv-bar';
+    waveformEl.appendChild(b);
+    bars.push(b);
+  }
+
+  // ── Audio state ──
+  let audio     = null;
+  let ctx       = null;
+  let analyser  = null;
+  let dataArray = null;
+  let srcNode   = null;
+  let playing   = false;
+  let frameId   = null;
+  let objectUrl = null;
+  let savedFileName = null;
+
+  // ── localStorage key for last file name (display only) ──
+  const LS_NAME = 'musicbuddy_last_name';
+  const LS_PATH = 'musicbuddy_last_path'; // for file:// if available
+
+  // ── Format seconds → m:ss ──
+  function fmt(s) {
+    if (!isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const ss = String(Math.floor(s % 60)).padStart(2, '0');
+    return m + ':' + ss;
+  }
+
+  function showErr(msg) {
+    errEl.textContent = msg || '';
+  }
+
+  // ── Setup audio pipeline ──
+  function setupAudio(file) {
+    // Cleanup
+    if (audio) { audio.pause(); audio.src = ''; }
+    if (ctx)   { ctx.close(); ctx = null; analyser = null; srcNode = null; }
+    if (frameId) { cancelAnimationFrame(frameId); frameId = null; }
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+
+    objectUrl = URL.createObjectURL(file);
+    audio = new Audio();
+    audio.loop = true;
+    audio.volume = volume;
+
+    audio.addEventListener('error', () => {
+      let msg = 'Chyba načítania';
+      if (audio.error) {
+        const codes = ['','Zrušené','Sieťová chyba','Chyba dekódovania','Formát nepodporovaný'];
+        msg = codes[audio.error.code] || msg;
+      }
+      showErr(msg);
+      setPlaying(false);
+    });
+
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', () => {
+      timeTot.textContent = fmt(audio.duration);
+    });
+
+    audio.addEventListener('canplaythrough', () => {
+      showErr('');
+      activatePlayer(file.name);
+      startPlayback();
+    }, { once: true });
+
+    audio.src = objectUrl;
+    audio.load();
+
+    // Save name to localStorage
+    savedFileName = file.name;
+    try { localStorage.setItem(LS_NAME, file.name); } catch(e) {}
+  }
+
+  function activatePlayer(name) {
+    dropHint.classList.add('hidden');
+    waveformEl.classList.add('visible');
+    bars.forEach(b => b.classList.add('active'));
+    trackName.textContent = name.replace(/\.[^.]+$/, '');
+    trackSub.textContent  = 'music buddy';
+  }
+
+  async function startPlayback() {
+    try {
+      if (!ctx) {
+        ctx = new AudioContext();
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.82;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        srcNode = ctx.createMediaElementSource(audio);
+        srcNode.connect(analyser);
+        analyser.connect(ctx.destination);
+      }
+      if (ctx.state === 'suspended') await ctx.resume();
+      await audio.play();
+      setPlaying(true);
+      if (!frameId) visualLoop();
+    } catch(e) {
+      showErr('Play zlyhalo');
+      console.error(e);
+    }
+  }
+
+  function pausePlayback() {
+    if (audio) audio.pause();
+    setPlaying(false);
+  }
+
+  function setPlaying(val) {
+    playing = val;
+    if (val) {
+      playBtn.classList.remove('paused');
+      playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // pause icon
+    } else {
+      playBtn.classList.add('paused');
+      playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // play icon
+    }
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (!audio) return;
+    playing ? pausePlayback() : startPlayback();
+  });
+
+  // seek
+  progressBg.addEventListener('click', (e) => {
+    if (!audio || !audio.duration) return;
+    const rect = progressBg.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = ratio * audio.duration;
+  });
+
+  // restart / skip back
+  prevBtn.addEventListener('click', () => {
+    if (!audio) return;
+    audio.currentTime = 0;
+  });
+
+  // skip forward 10s
+  nextBtn.addEventListener('click', () => {
+    if (!audio) return;
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+  });
+
+  // eject — reset to drop zone
+  ejectBtn.addEventListener('click', resetPlayer);
+
+  function resetPlayer() {
+    if (audio) { audio.pause(); audio.src = ''; }
+    if (ctx)   { ctx.close(); ctx = null; }
+    if (frameId) { cancelAnimationFrame(frameId); frameId = null; }
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+    playing = false;
+    audio = null; analyser = null; srcNode = null; dataArray = null;
+
+    dropHint.classList.remove('hidden');
+    waveformEl.classList.remove('visible');
+    bars.forEach(b => { b.classList.remove('active'); b.style.height = '3px'; });
+    trackName.textContent = '—';
+    progressFill.style.width = '0%';
+    timeCur.textContent = '0:00';
+    timeTot.textContent = '0:00';
+    setPlaying(false);
+    fileInput.value = '';
+    try { localStorage.removeItem(LS_NAME); } catch(e) {}
+  }
+
+  // ── Progress update ──
+  function updateProgress() {
+    if (!audio || !audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    progressFill.style.width = pct + '%';
+    timeCur.textContent = fmt(audio.currentTime);
+  }
+
+  // ── Visualizer ──
+  function visualLoop() {
+    frameId = requestAnimationFrame(visualLoop);
+    if (!playing || !analyser) return;
+
+    analyser.getByteFrequencyData(dataArray);
+    const len = dataArray.length;
+
+    // Map BAR_COUNT bars across full spectrum (log-ish spread)
+    for (let i = 0; i < BAR_COUNT; i++) {
+      // Spread logarithmically so bass bars aren't all squished together
+      const t   = i / BAR_COUNT;
+      const idx = Math.floor(Math.pow(t, 0.7) * len);
+      const val = dataArray[Math.min(idx, len - 1)] / 255;
+      const h   = Math.max(3, Math.round(val * 62));
+      bars[i].style.height = h + 'px';
+    }
+  }
+
+  // ── File loading ──
+  function handleFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('audio/')) { showErr('Nie je to audio súbor'); return; }
+    showErr('');
+    setupAudio(file);
+  }
+
+  fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+  // Drag & drop on art box
+  artBox.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); artBox.classList.add('dragover'); });
+  artBox.addEventListener('dragleave', () => artBox.classList.remove('dragover'));
+  artBox.addEventListener('drop', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    artBox.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  // Also accept drops anywhere on player
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  // ── Restore last track name from localStorage (display only) ──
+  // We can't restore the File itself, but we show the last name and prompt
+  try {
+    const lastName = localStorage.getItem(LS_NAME);
+    if (lastName) {
+      trackName.textContent = lastName.replace(/\.[^.]+$/, '');
+      trackSub.textContent  = 'presuň znova pre autoplay';
+      waveformEl.classList.add('visible');
+      // Show idle bars with low height
+      bars.forEach((b, i) => {
+        b.classList.add('active');
+        b.style.height = (3 + Math.round(Math.sin(i * 0.7) * 5 + 5)) + 'px';
+      });
+    }
+  } catch(e) {}
+
+})();
+</script>
+</body>
+</html>
