@@ -1,12 +1,18 @@
 {
   "name": "music-buddy",
   "version": "1.0.0",
-  "description": "Malý widget so smajlíkom tancujúcim na hudbu",
+  "description": "A small Electron desktop widget that plays local audio files and visualizes their frequency spectrum",
+  "author": "Filip Duda",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "test": "node --test"
   },
   "devDependencies": {
-    "electron": "^29.0.0"
+    "electron": "^45.0.0"
   }
 }
