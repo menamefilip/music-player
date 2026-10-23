@@ -1,5 +1,4 @@
 const { app, BrowserWindow, screen } = require('electron');
-const path = require('path');
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -18,7 +17,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      sandbox: true,
     },
   });
 

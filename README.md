@@ -1,85 +1,47 @@
-# 🎧 Music Buddy — widget
+# Music Buddy
 
-Malý floating widget v rohu obrazovky so smajlíkom, ktorý tancuje na hudbu.
+[![Source checks](https://github.com/menamefilip/music-player/actions/workflows/ci.yml/badge.svg)](https://github.com/menamefilip/music-player/actions/workflows/ci.yml)
 
----
+Music Buddy is a compact Electron desktop audio player and visualizer. It plays audio files you choose from your computer and visualizes the playing track.
 
-## Inštalácia (Pop!_OS / Ubuntu)
+![Music Buddy UI preview in its empty state, with no audio loaded](assets/music-buddy-ui.png)
 
-### 1. Rozbaliť ZIP
+> Chromium preview of the actual UI HTML in its empty state; no audio is loaded.
+
+## Requirements
+
+- Git
+- Node.js 22.12.0 or newer, with npm
+- A desktop environment supported by Electron
+
+## Install and run
+
 ```bash
-unzip music-buddy.zip
-cd music-buddy
-```
-
-### 2. Nainštalovať Node.js (ak ešte nemáš)
-```bash
-sudo apt install nodejs npm
-```
-
-### 3. Nainštalovať Electron
-```bash
-npm install
-```
-
-### 4. Spustiť widget
-```bash
+git clone https://github.com/menamefilip/music-player.git
+cd music-player
+npm ci
 npm start
 ```
 
----
+## Use
 
-## Ako to funguje
+- Select a local audio file with the file picker, or drag and drop one onto the widget. Supported formats depend on Electron/Chromium.
+- Playback loops the selected track. Use the controls to play/pause, seek, and adjust volume.
+- The frequency spectrum shows 28 bars that react to the selected file's audio.
+- The frameless, always-on-top window is **220 × 340 px** and opens near the lower-right of the display; drag it to move it.
+- Music Buddy plays local audio files only. It does not capture microphone or system loopback audio.
 
-- Widget sa zobrazí v **pravom dolnom rohu** obrazovky (160×160 px, vždy navrchu)
-- Počúva **mikrofón** (alebo loopback audio) a vizualizuje zvuk:
-  - 7 EQ tyčiniek dole
-  - Smajlík skáče na basy
-  - Zelenou halo ring na basy
-  - Emoji sa mení podľa hlasitosti: 😴 → 🎧 → 😎 → 🤩 → 🥳
-- **Drag** — okno sa dá presunúť kliknutím a ťahaním
-- **✕** tlačidlo sa zobrazí po hover (vpravo hore)
+The renderer runs sandboxed, with Node.js integration disabled and context isolation enabled. Music Buddy has no preload bridge and does not inject `os.homedir()` into the renderer.
 
----
-
-## 🔊 Tip: systémový zvuk miesto mikrofónu (PipeWire)
-
-Na Pop!_OS s PipeWire môžeš nastaviť **loopback** — widget bude počúvať čo hrá (Spotify, YouTube...):
+## Development checks
 
 ```bash
-# Inštaluj pavucontrol
-sudo apt install pavucontrol
-
-# Spusti widget, potom v pavucontrol:
-# záložka "Recording" → Music Buddy → nastav zdroj na "Monitor of [tvoja zvuková karta]"
+npm test
+node --check main.js
 ```
 
----
+The test suite uses Node.js's built-in test runner and does not require additional test dependencies. These are repository contract checks; they do not launch the Electron GUI or test playback end-to-end.
 
-## Automatické spustenie pri štarte
+## License
 
-```bash
-# Vytvor .desktop súbor
-mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/music-buddy.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=Music Buddy
-Exec=bash -c "cd $HOME/music-buddy && npm start"
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-EOF
-```
-
----
-
-## Štruktúra projektu
-```
-music-buddy/
-├── main.js       ← Electron hlavný proces (okno, pozícia)
-├── preload.js    ← bezpečnostný bridge
-├── index.html    ← UI widget (CSS + Web Audio API)
-├── package.json  ← npm config
-└── README.md     ← tento súbor
-```
+MIT. See [LICENSE](LICENSE).

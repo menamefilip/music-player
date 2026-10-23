@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Music Buddy</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
@@ -284,7 +285,7 @@
   <div class="art-box" id="artBox">
     <div class="drop-hint" id="dropHint">
       <span class="icon">🎵</span>
-      <p>Presuň MP3<br>alebo klikni</p>
+      <p>Drop an audio file<br>or click to browse</p>
       <input type="file" id="fileInput" accept="audio/*">
     </div>
     <div class="waveform" id="waveform">
@@ -326,7 +327,7 @@
   </div>
 
   <div class="err" id="errEl"></div>
-  <div class="eject-btn" id="ejectBtn" title="Zmeniť skladbu">⏏</div>
+  <div class="eject-btn" id="ejectBtn" title="Change track">⏏</div>
   <div class="close-btn" id="closeBtn">✕</div>
 </div>
 
@@ -424,9 +425,9 @@
     audio.volume = volume;
 
     audio.addEventListener('error', () => {
-      let msg = 'Chyba načítania';
+      let msg = 'Audio loading failed';
       if (audio.error) {
-        const codes = ['','Zrušené','Sieťová chyba','Chyba dekódovania','Formát nepodporovaný'];
+        const codes = ['','Playback cancelled','Network error','Audio decode error','Unsupported audio format'];
         msg = codes[audio.error.code] || msg;
       }
       showErr(msg);
@@ -482,7 +483,7 @@
       setPlaying(true);
       if (!frameId) visualLoop();
     } catch(e) {
-      showErr('Play zlyhalo');
+      showErr('Playback failed');
       console.error(e);
     }
   }
@@ -581,7 +582,7 @@
   // ── File loading ──
   function handleFile(file) {
     if (!file) return;
-    if (!file.type.startsWith('audio/')) { showErr('Nie je to audio súbor'); return; }
+    if (!file.type.startsWith('audio/')) { showErr('This is not an audio file'); return; }
     showErr('');
     setupAudio(file, file.name);
   }
@@ -610,7 +611,7 @@
     const lastName = localStorage.getItem(LS_NAME);
     if (lastName) {
       trackName.textContent = lastName.replace(/\.[^.]+$/, '');
-      trackSub.textContent  = 'presuň znova pre autoplay';
+      trackSub.textContent  = 'Select the file again to play';
       waveformEl.classList.add('visible');
       // Show idle bars with low height
       bars.forEach((b, i) => {
@@ -619,17 +620,6 @@
       });
     }
   } catch(e) {}
-
-  // ── Auto-load default music ──
-  (async () => {
-    try {
-      // Use HEAD request to check if file exists without downloading it all
-      const response = await fetch('background_music.mp3', { method: 'HEAD' });
-      if (response.ok) {
-        setupAudio('background_music.mp3', 'background_music.mp3');
-      }
-    } catch(e) {}
-  })();
 
 })();
 </script>
